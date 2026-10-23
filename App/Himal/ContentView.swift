@@ -48,9 +48,14 @@ struct ContentView: View {
                 HStack(alignment: .top) {
                     RoundButton(systemName: "camera.fill", isActive: store.usesCamera) { store.toggleCamera() }
                     Spacer()
-                    CompassDial(heading: store.heading, isFollowing: store.followsCompass) { store.followsCompass.toggle() }
+                    CompassDial(
+                        heading: store.heading, isFollowing: store.followsCompass,
+                        action: { store.followsCompass.toggle() },
+                        onLongPress: { store.showsDiagnostics.toggle() }
+                    )
                 }
                 Spacer()
+                if store.showsDiagnostics { diagnostics }
                 if let panorama = store.panorama {
                     LocationChip(viewpoint: panorama.viewpoint)
                 }
@@ -61,6 +66,22 @@ struct ContentView: View {
 
             statusMessage
         }
+    }
+
+    /// Raw sensor values, shown by a long press on the compass dial, for checking the app against a real phone.
+    private var diagnostics: some View {
+        let accuracy = store.compassAccuracy.map { $0 < 0 ? "invalid" : String(format: "±%.0f°", $0) } ?? "none"
+        let lens = store.lens
+        return Text(String(
+            format: "heading %.1f°  accuracy %@\npitch %.1f°  roll %.1f°\nlens %.1f° long side, aspect %.2f\nfollowing compass %@",
+            store.heading, accuracy, store.pitch, store.roll, lens.longAxisFieldOfView, lens.imageAspect,
+            store.followsCompass ? "yes" : "no"
+        ))
+        .font(.system(size: 11, weight: .medium, design: .monospaced))
+        .foregroundStyle(.white)
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(.black.opacity(0.7)))
+        .padding(.bottom, 6)
     }
 
     @ViewBuilder private var statusMessage: some View {

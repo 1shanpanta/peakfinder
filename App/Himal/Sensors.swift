@@ -42,8 +42,12 @@ final class Sensors: NSObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading heading: CLHeading) {
         let degrees = heading.trueHeading >= 0 ? heading.trueHeading : heading.magneticHeading
-        Task { @MainActor in self.store.applyCompass(degrees) }
+        let accuracy = heading.headingAccuracy
+        Task { @MainActor in self.store.applyCompass(degrees, accuracy: accuracy) }
     }
+
+    /// Lets iOS show its figure-eight prompt when the compass needs calibrating.
+    nonisolated func locationManagerShouldDisplayHeadingCalibration(_ manager: CLLocationManager) -> Bool { true }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
 }

@@ -46,6 +46,9 @@ final class PanoramaStore {
     var fieldOfView = 28.0
     var usesCamera = false
     var followsCompass = false
+    var showsDiagnostics = false
+    /// Degrees of error the compass reports for itself, or nil before the first reading.
+    private(set) var compassAccuracy: Double?
 
     /// A viewpoint given at launch stays, so a simulator run is not moved by its own fake GPS.
     private var isPinned = false
@@ -79,7 +82,8 @@ final class PanoramaStore {
         refresh()
     }
 
-    func applyCompass(_ degrees: Double) {
+    func applyCompass(_ degrees: Double, accuracy: Double) {
+        compassAccuracy = accuracy
         guard followsCompass else { return }
         heading = Self.blend(heading, toward: degrees, by: 0.35)
     }

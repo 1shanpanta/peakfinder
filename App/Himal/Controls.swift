@@ -24,9 +24,10 @@ struct CompassDial: View {
     let heading: Double
     let isFollowing: Bool
     let action: () -> Void
+    let onLongPress: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Group {
             VStack(spacing: 3) {
                 ZStack {
                     Circle().fill(.white.opacity(0.95))
@@ -65,6 +66,10 @@ struct CompassDial: View {
                 }
             }
         }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
+        .onLongPressGesture(minimumDuration: 0.6, perform: onLongPress)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Compass, heading \(Int(heading.rounded())) degrees")
     }
 }
