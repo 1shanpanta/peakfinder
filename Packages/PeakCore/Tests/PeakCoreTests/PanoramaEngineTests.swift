@@ -73,6 +73,18 @@ import Testing
         #expect(result.skylineAngle(atBearing: 180) < 0)
     }
 
+    @Test func nearerLayersLeaveOutRidgesBeyondTheirRange() throws {
+        var terrain = TerrainBuilder(degrees: 0.6, cellsPerDegree: 1200, north: 30.2)
+        terrain.raiseRow(latitude: Place.north(20_000).lat, to: 600)
+        let result = PanoramaEngine.make(grid: try terrain.build(), peaks: [], viewpoint: eye, rangeKm: 30)
+
+        let twelveKm = try #require(result.layers.first { $0.rangeKm == 12 })
+        let northIndex = 0
+        // The wall stands 20 km away: invisible inside 12 km, 1.7 degrees high in the full skyline.
+        #expect(twelveKm.angles[northIndex] < 0)
+        #expect(result.skyline[northIndex] > 1.5)
+    }
+
     @Test func gridReturnsTheCellUnderAPointAndNilOutside() throws {
         var terrain = TerrainBuilder(degrees: 0.4, cellsPerDegree: 1200)
         terrain.raiseRow(latitude: Place.north(3_000).lat, to: 123)

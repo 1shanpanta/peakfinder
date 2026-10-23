@@ -44,8 +44,16 @@ public struct Panorama: Sendable {
     public static let azimuthStep = 0.1
     public let viewpoint: Viewpoint
     public let rangeKm: Double
+    /// Skyline of the terrain inside one distance, in degrees above level.
+    public struct Layer: Sendable {
+        public let rangeKm: Double
+        public let angles: [Float]
+    }
+
     /// Skyline angle in degrees above level, one value per `azimuthStep` degrees, starting at north.
     public let skyline: [Float]
+    /// Nearer skylines, nearest first. Each one hides less than the full skyline, which adds the far ridges.
+    public let layers: [Layer]
     /// Visible peaks, highest first.
     public let peaks: [VisiblePeak]
 

@@ -12,6 +12,7 @@ public enum PanoramaEngine {
     static let nearMinRise = 10.0
     static let minPeakDistance = 500.0
     static let visibilityToleranceDegrees = 0.1
+    static let layerCutoffsMeters = [4_000.0, 12_000, 30_000, 70_000]
 
     public static func eyeHeight(grid: ElevationGrid, latitude: Double, longitude: Double, aboveGround: Double = 1.7) -> Double? {
         grid.height(latitude: latitude, longitude: longitude).map { $0 + aboveGround }
@@ -23,19 +24,36 @@ public enum PanoramaEngine {
             let rangeMeters = rangeKm * 1000
             let count = Int((360 / Panorama.azimuthStep).rounded())
 
-            var skyline = [Float](repeating: 0, count: count)
-            skyline.withUnsafeMutableBufferPointer { out in
-                nonisolated(unsafe) let slots = out
-                DispatchQueue.concurrentPerform(iterations: count) { index in
-                    let bearing = Double(index) * Panorama.azimuthStep * .pi / 180
-                    let slope = ray.maxSlope(bearing: bearing, limit: rangeMeters)
-                    slots[index] = Float(slope.isFinite ? atan(slope) * 180 / .pi : -90)
+            // Skyline of everything inside each cutoff, nearest first, so far ridges can be drawn paler.
+            let cutoffs = layerCutoffsMeters.filter { $0 < rangeMeters } + [rangeMeters]
+            var angles = [[Float]](repeating: [Float](repeating: -90, count: count), count: cutoffs.count)
+            let rows = slopeRows(ray: ray, count: count, cutoffs: cutoffs)
+            for (index, slopes) in rows.enumerated() {
+                for layer in cutoffs.indices where slopes[layer].isFinite {
+                    angles[layer][index] = Float(atan(slopes[layer]) * 180 / .pi)
                 }
             }
+            let layers = zip(cutoffs, angles).dropLast().map { Panorama.Layer(rangeKm: $0 / 1000, angles: $1) }
 
             let visible = peaks.compactMap { visiblePeak($0, ray: ray, viewpoint: viewpoint, rangeMeters: rangeMeters) }
-            return Panorama(viewpoint: viewpoint, rangeKm: rangeKm, skyline: skyline, peaks: visible.sorted { $0.elevation > $1.elevation })
+            return Panorama(
+                viewpoint: viewpoint, rangeKm: rangeKm, skyline: angles[angles.count - 1], layers: Array(layers),
+                peaks: visible.sorted { $0.elevation > $1.elevation }
+            )
         }
+    }
+
+    /// One row per azimuth, holding the steepest slope inside each cutoff.
+    static func slopeRows(ray: RayMarcher, count: Int, cutoffs: [Double]) -> [[Double]] {
+        var rows = [[Double]](repeating: [], count: count)
+        rows.withUnsafeMutableBufferPointer { out in
+            nonisolated(unsafe) let slots = out
+            DispatchQueue.concurrentPerform(iterations: count) { index in
+                let bearing = Double(index) * Panorama.azimuthStep * .pi / 180
+                slots[index] = ray.cumulativeSlopes(bearing: bearing, cutoffs: cutoffs)
+            }
+        }
+        return rows
     }
 
     static func visiblePeak(_ peak: PeakRecord, ray: RayMarcher, viewpoint: Viewpoint, rangeMeters: Double) -> VisiblePeak? {
@@ -72,12 +90,23 @@ struct RayMarcher {
 
     /// Steepest slope (rise over run, so the order matches angle order) seen along a ray, or -infinity if none.
     func maxSlope(bearing: Double, limit: Double) -> Double {
+        cumulativeSlopes(bearing: bearing, cutoffs: [limit])[0]
+    }
+
+    /// The steepest slope within each cutoff distance, from one walk along the ray. Cutoffs rise in order.
+    func cumulativeSlopes(bearing: Double, cutoffs: [Double]) -> [Double] {
         let east = sin(bearing)
         let north = cos(bearing)
         let eye = viewpoint.eyeHeight
         var best = -Double.infinity
+        var results = [Double](repeating: -.infinity, count: cutoffs.count)
+        var next = 0
         var distance = PanoramaEngine.stepMeters
-        while distance <= limit {
+        while let limit = cutoffs.last, distance <= limit {
+            while distance > cutoffs[next] {
+                results[next] = best
+                next += 1
+            }
             let latitude = viewpoint.latitude + distance * north / PanoramaEngine.metersPerDegreeLatitude
             let midLatitude = (viewpoint.latitude + latitude) / 2 * .pi / 180
             let longitude = viewpoint.longitude
@@ -91,6 +120,7 @@ struct RayMarcher {
             best = max(best, (rise - PanoramaEngine.curvatureDrop(distance)) / distance)
             distance += PanoramaEngine.stepMeters
         }
-        return best
+        for index in next..<cutoffs.count { results[index] = best }
+        return results
     }
 }
