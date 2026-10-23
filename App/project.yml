@@ -1,0 +1,29 @@
+name: Himal
+options:
+  bundleIdPrefix: com.shanpanta
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  PeakCore:
+    path: ../Packages/PeakCore
+targets:
+  Himal:
+    type: application
+    platform: iOS
+    sources:
+      - path: Himal
+    dependencies:
+      - package: PeakCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.shanpanta.himal
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Himal
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Himal uses your position to work out which peaks you can see.
+        INFOPLIST_KEY_NSCameraUsageDescription: Himal shows the camera behind the peak labels.
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UIStatusBarHidden: YES
