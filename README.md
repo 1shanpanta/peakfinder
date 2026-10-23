@@ -26,15 +26,18 @@ The idea comes from the PeakFinder app. Himal is a personal build, sideloaded to
 1. Run `tools/fetch-nepal-data.sh`. It downloads 1.7 GB of terrain and the Nepal OSM extract to `../peakfinder-data`, then cuts the peaks with `osmium`.
 2. Run `uv run tools/build-data.py`. It writes the packed files to `shared/data`.
 3. iOS: run `xcodegen generate` in `ios`, open `ios/Himal.xcodeproj`, pick your Apple ID under Signing, then run on the phone. A free Apple ID expires the app after 7 days.
+4. Android: needs JDK 17 and the Android SDK. In `android`, run `./gradlew :app:assembleRelease`. The signed APK lands in `android/app/build/outputs/apk/release`. Install it with `adb install -r app-release.apk`. The release build uses the debug key, so it is for sideloading only.
 
 ## Test
 
 - iOS engine: `swift test` in `ios/PeakCore`. The Nepal sightline tests skip when the packed data is missing.
 - iOS screen: `tools/ios-sim-shot.sh OUT.png -lat 27.7172 -lon 85.52 -heading 77` builds, launches and screenshots the simulator.
+- Android engine: `./gradlew :core:test` in `android`. It runs on the JVM with no emulator. The Nepal sightline tests skip when the packed data is missing.
+- Android screen: `tools/android-shot.sh OUT.png --ed lat 27.7172 --ed lon 85.52 --ed heading 77` builds, installs, launches and screenshots the device in `adb devices`.
 
 ## Not verified yet
 
-- Live compass and camera alignment on a real phone. Simulators have neither.
+- Live compass and camera alignment on a real phone, iOS and Android. Simulators and emulators only fake them.
 - Landscape layout and pinch to zoom.
 - Accuracy against a real photo.
 
