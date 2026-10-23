@@ -22,8 +22,9 @@ private let dataPresent = FileManager.default.fileExists(atPath: resources.appen
         let result = try panorama(lat: 27.7172, lon: 85.52, eye: 2175)
         let everest = try #require(result.peaks.first { $0.name == "Mount Everest" })
 
-        #expect(abs(everest.bearing - 77.8) < 0.5)
-        #expect(abs(everest.distanceKm - 141.7) < 1)
+        // WGS84 geodesic from pyproj: 77.44 degrees, 141.62 km.
+        #expect(abs(everest.bearing - 77.44) < 0.15)
+        #expect(abs(everest.distanceKm - 141.62) < 0.8)
     }
 
     @Test func langtangLirungStandsDueNorthOfNagarkot() throws {

@@ -26,15 +26,16 @@ struct TerrainBuilder {
 enum Place {
     static let latitude = 29.8
     static let longitude = 85.2
-    static let metersPerDegreeLatitude = 110_540.0
+    /// One degree of a great circle on the engine's sphere, in metres.
+    static let metersPerDegree = 6_371_008.8 * .pi / 180
 
     /// A point `meters` north of the viewpoint.
     static func north(_ meters: Double) -> (lat: Double, lon: Double) {
-        (latitude + meters / metersPerDegreeLatitude, longitude)
+        (latitude + meters / metersPerDegree, longitude)
     }
 
     /// A point `meters` east of the viewpoint.
     static func east(_ meters: Double) -> (lat: Double, lon: Double) {
-        (latitude, longitude + meters / (111_320 * cos(latitude * .pi / 180)))
+        (latitude, longitude + meters / (metersPerDegree * cos(latitude * .pi / 180)))
     }
 }

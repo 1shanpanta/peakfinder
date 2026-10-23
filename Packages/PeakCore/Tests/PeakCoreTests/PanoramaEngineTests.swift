@@ -20,6 +20,23 @@ import Testing
         #expect(abs(hill.bearing) < 0.1 || abs(hill.bearing - 360) < 0.1)
     }
 
+    @Test(arguments: [
+        (name: "Nagarkot to Everest", from: (27.7172, 85.52), to: (27.9880614, 86.92521), bearing: 77.4362, km: 141.623),
+        (name: "Pokhara to Dhaulagiri", from: (28.2096, 83.9856), to: (28.6967, 83.4875), bearing: 318.0128, km: 72.763),
+        (name: "Lukla to Kangchenjunga", from: (27.6869, 86.7314), to: (27.7030109, 88.1474775), bearing: 88.9387, km: 139.689),
+    ])
+    func greatCircleMatchesTheWGS84Geodesic(_ line: (name: String, from: (Double, Double), to: (Double, Double), bearing: Double, km: Double)) {
+        // Reference numbers come from pyproj's WGS84 geodesic. A sphere is off by up to 0.15 degrees of bearing
+        // and 0.3 percent of distance, which is small beside a phone compass that is often 5 degrees out.
+        let result = PanoramaEngine.greatCircle(
+            fromLatitude: line.from.0, longitude: line.from.1, toLatitude: line.to.0, longitude: line.to.1
+        )
+        let bearing = result.bearing * 180 / .pi
+
+        #expect(abs((bearing + 360).truncatingRemainder(dividingBy: 360) - line.bearing) < 0.2, "\(line.name)")
+        #expect(abs(result.distance / 1000 - line.km) / line.km < 0.005, "\(line.name)")
+    }
+
     @Test func peakDueEastHasBearingNinety() throws {
         let grid = try TerrainBuilder(degrees: 0.4, cellsPerDegree: 1200).build()
         let result = PanoramaEngine.make(grid: grid, peaks: [peak("East", at: Place.east(8_000), ele: 400)], viewpoint: eye, rangeKm: 20)
