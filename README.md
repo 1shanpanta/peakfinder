@@ -14,11 +14,10 @@ The idea comes from the PeakFinder app. Himal is a personal build, sideloaded to
 
 ## Setup
 
-1. Run `tools/fetch-nepal-data.sh`. It downloads 1.7 GB of terrain and the Nepal OSM extract to `../peakfinder-data`.
-2. Cut the peaks with `osmium` into `peakfinder-data/peaks/nepal-peaks.geojson`.
-3. Run `uv run tools/build-data.py`. It writes the packed files to `App/Himal/Resources`.
-4. Run `xcodegen generate` in `App`.
-5. Open `App/Himal.xcodeproj`. Pick your Apple ID under Signing, then run on the phone.
+1. Run `tools/fetch-nepal-data.sh`. It downloads 1.7 GB of terrain and the Nepal OSM extract to `../peakfinder-data`, then cuts the peaks with `osmium`.
+2. Run `uv run tools/build-data.py`. It writes the packed files to `App/Himal/Resources`.
+3. Run `xcodegen generate` in `App`.
+4. Open `App/Himal.xcodeproj`. Pick your Apple ID under Signing, then run on the phone.
 
 A free Apple ID expires the app after 7 days. Run it again from Xcode to renew it.
 
