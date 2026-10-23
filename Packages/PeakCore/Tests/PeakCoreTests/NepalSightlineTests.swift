@@ -5,7 +5,7 @@ import Testing
 private let resources = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     .deletingLastPathComponent().deletingLastPathComponent()
-    .appendingPathComponent("App/Peak/Resources")
+    .appendingPathComponent("App/Himal/Resources")
 private let dataPresent = FileManager.default.fileExists(atPath: resources.appendingPathComponent("nepal-dem.i16").path)
 
 /// Real Nepal data, run only where `tools/build-data.py` has been run. Sightlines are well-known facts.

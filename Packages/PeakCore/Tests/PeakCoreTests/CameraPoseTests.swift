@@ -5,42 +5,43 @@ import Testing
 @Suite struct CameraPoseTests {
     private func rad(_ degrees: Double) -> Double { degrees * .pi / 180 }
 
-    @Test func uprightPhoneFacingNorthReadsZeroEverywhere() {
-        let pose = CameraPose(rotation: [0, -1, 0, 0, 0, 1, -1, 0, 0])
+    @Test func anUprightPhoneLooksLevelWithNoRoll() {
+        // Held upright, gravity runs down the screen toward the bottom edge: y is -1.
+        let pose = CameraPose(gravityX: 0, y: -1, z: 0)
 
-        #expect(abs(pose.bearing) < 0.001 || abs(pose.bearing - 360) < 0.001)
         #expect(abs(pose.pitch) < 0.001)
         #expect(abs(pose.roll) < 0.001)
     }
 
-    @Test func uprightPhoneFacingEastReadsNinety() {
-        let pose = CameraPose(rotation: [-1, 0, 0, 0, 0, 1, 0, 1, 0])
-
-        #expect(abs(pose.bearing - 90) < 0.001)
-        #expect(abs(pose.pitch) < 0.001)
-    }
-
-    @Test func tiltingTheCameraUpRaisesPitchAndKeepsHeading() {
+    @Test func tippingTheTopTowardYouLooksUp() {
+        // The screen turns to face down toward the floor, so gravity gains a +z part.
         let tilt = rad(30)
-        let pose = CameraPose(rotation: [0, -1, 0, -sin(tilt), 0, cos(tilt), -cos(tilt), 0, -sin(tilt)])
+        let pose = CameraPose(gravityX: 0, y: -cos(tilt), z: sin(tilt))
 
         #expect(abs(pose.pitch - 30) < 0.001)
         #expect(abs(pose.roll) < 0.001)
-        #expect(abs(pose.bearing) < 0.001 || abs(pose.bearing - 360) < 0.001)
+    }
+
+    @Test func tippingTheTopAwayFromYouLooksDown() {
+        // The screen turns to face up, so gravity gains a -z part.
+        let tilt = rad(20)
+        let pose = CameraPose(gravityX: 0, y: -cos(tilt), z: -sin(tilt))
+
+        #expect(abs(pose.pitch + 20) < 0.001)
     }
 
     @Test func rollingTheRightEdgeDownGivesPositiveRoll() {
+        // The right edge points toward the floor, so gravity gains a +x part.
         let roll = rad(20)
-        let pose = CameraPose(rotation: [0, -cos(roll), -sin(roll), 0, -sin(roll), cos(roll), -1, 0, 0])
+        let pose = CameraPose(gravityX: sin(roll), y: -cos(roll), z: 0)
 
         #expect(abs(pose.roll - 20) < 0.001)
         #expect(abs(pose.pitch) < 0.001)
     }
 
-    @Test func aPhoneLyingFlatTakesItsHeadingFromTheTopEdge() {
-        let pose = CameraPose(rotation: [-1, 0, 0, 0, -1, 0, 0, 0, 1])
+    @Test func aPhoneLyingFlatLooksStraightDown() {
+        let pose = CameraPose(gravityX: 0, y: 0, z: -1)
 
         #expect(abs(pose.pitch + 90) < 0.001)
-        #expect(abs(pose.bearing - 90) < 0.001)
     }
 }

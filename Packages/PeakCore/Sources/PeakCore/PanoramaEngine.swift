@@ -8,8 +8,9 @@ public enum PanoramaEngine {
     static let metersPerDegreeLongitude = 111_320.0
     static let stepMeters = 80.0
     /// Within this range, ground rising less than `nearMinRise` above the eye is roofs and trees, not a ridge.
-    static let nearFieldMeters = 1_000.0
-    static let nearMinRise = 10.0
+    /// Copernicus is a surface model, and a Kathmandu street of 12 m buildings otherwise walls off 2 degrees of sky.
+    static let nearFieldMeters = 2_000.0
+    static let nearMinRise = 25.0
     static let minPeakDistance = 500.0
     static let visibilityToleranceDegrees = 0.1
     static let layerCutoffsMeters = [4_000.0, 12_000, 30_000, 70_000]

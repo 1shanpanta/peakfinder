@@ -48,6 +48,10 @@ public struct Panorama: Sendable {
     public struct Layer: Sendable {
         public let rangeKm: Double
         public let angles: [Float]
+
+        public func angle(atBearing bearing: Double) -> Double {
+            Panorama.interpolate(angles, atBearing: bearing)
+        }
     }
 
     /// Skyline angle in degrees above level, one value per `azimuthStep` degrees, starting at north.
@@ -58,10 +62,14 @@ public struct Panorama: Sendable {
     public let peaks: [VisiblePeak]
 
     public func skylineAngle(atBearing bearing: Double) -> Double {
-        let position = (bearing.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360) / Self.azimuthStep
-        let lower = Int(position) % skyline.count
-        let upper = (lower + 1) % skyline.count
+        Self.interpolate(skyline, atBearing: bearing)
+    }
+
+    static func interpolate(_ values: [Float], atBearing bearing: Double) -> Double {
+        let position = (bearing.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360) / azimuthStep
+        let lower = Int(position) % values.count
+        let upper = (lower + 1) % values.count
         let fraction = position - position.rounded(.down)
-        return Double(skyline[lower]) * (1 - fraction) + Double(skyline[upper]) * fraction
+        return Double(values[lower]) * (1 - fraction) + Double(values[upper]) * fraction
     }
 }
