@@ -4,7 +4,7 @@
 # ///
 """Pack the downloaded Nepal data into the two files the app bundles.
 
-Usage: uv run tools/build-data.py [data-dir] [out-dir]
+Usage: uv run tools/build-data.py [data-dir] [out-dir]   (out-dir defaults to App/Himal/Resources)
 Reads  <data-dir>/dem/*.tif and <data-dir>/peaks/nepal-peaks.geojson (see fetch-nepal-data.sh).
 Writes <out-dir>/nepal-dem.i16 (int16 little-endian, north row first), nepal-dem.json (grid header)
 and nepal-peaks.json. Each 3 arc-second cell keeps the HIGHEST of its 3x3 source cells so summits survive.
@@ -21,7 +21,7 @@ SOUTH, NORTH, WEST, EAST = 26, 31, 80, 89
 CELLS_PER_DEG = 1200  # 3 arc-seconds
 
 data = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parents[2] / "peakfinder-data")
-out = Path(sys.argv[2] if len(sys.argv) > 2 else Path(__file__).resolve().parents[1] / "App/Peak/Resources")
+out = Path(sys.argv[2] if len(sys.argv) > 2 else Path(__file__).resolve().parents[1] / "App/Himal/Resources")
 out.mkdir(parents=True, exist_ok=True)
 
 rows, cols = (NORTH - SOUTH) * CELLS_PER_DEG, (EAST - WEST) * CELLS_PER_DEG
@@ -50,7 +50,7 @@ DEVANAGARI = re.compile(r"[ऀ-ॿ]+")
 
 def label(tags: dict) -> str:
     for key in ("name:en", "int_name"):
-        value = tags.get(key, "").strip()
+        value = tags.get(key, "").strip().rstrip("?").strip()
         if LATIN.search(value):
             return value
     name = tags.get("name", "").strip()
@@ -75,7 +75,7 @@ for feature in json.load(open(data / "peaks/nepal-peaks.geojson"))["features"]:
     if feature["geometry"]["type"] != "Point":
         continue
     tags = feature["properties"]
-    name = label(tags)
+    name = label(tags).rstrip("? ")
     if not name:
         continue
     lon, lat = feature["geometry"]["coordinates"]
