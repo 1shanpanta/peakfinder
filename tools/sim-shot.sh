@@ -11,7 +11,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 derived="${HIMAL_DERIVED:-${TMPDIR:-/tmp}/himal-derived}"
 
 (cd "$root/App" && xcodegen generate --quiet)
-xcodebuild -project "$root/App/Himal.xcodeproj" -scheme Himal -derivedDataPath "$derived" \
+xcodebuild -project "$root/App/Himal.xcodeproj" -scheme Himal -configuration Debug -derivedDataPath "$derived" \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' CODE_SIGNING_ALLOWED=NO build -quiet \
   | grep -E "error:|BUILD" || true
 

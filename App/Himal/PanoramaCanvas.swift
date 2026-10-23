@@ -9,7 +9,7 @@ struct PanoramaCanvas: View {
     /// True draws the shaded ridges of the flat panorama. False draws only the outline over the camera.
     let drawsTerrain: Bool
 
-    private static let labelSpacing = 25.0
+    private static let labelSpacing = 30.0
     private static let labelTilt = Angle.degrees(-62)
 
     var body: some View {
