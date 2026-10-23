@@ -6,8 +6,10 @@ Local replica of the PeakFinder iOS app. It labels mountain peaks on a 360 degre
 
 - Platform: native Swift iOS app. Xcode 26.6, Swift 6.3.3.
 - Region: Nepal only.
-- v1 scope: GPS position, compass heading, horizon outline with peak names and heights, camera overlay, fully offline.
-- Out of v1: map pick, sun and moon paths, telescope, "show me", fly mode.
+- v1 scope: GPS position, compass heading, flat panorama with peak names and heights, camera overlay, fully offline.
+- UI target is PeakFinder: a flat horizon outline, slanted name and height labels on vertical leader lines, a compass dial with the heading, and a location chip.
+- Out of v1: map pick, sun and moon paths, telescope, "show me", fly mode, skyline matching.
+- Prior art: Fry19/peak has no license. Read it for ideas only. Never copy its code.
 - Terrain: Copernicus GLO-30 (30 m), cut to Nepal.
 - Peak names: OpenStreetMap `natural=peak`, from a Geofabrik extract.
 - Distribution: sideload to one phone. No App Store release.
@@ -23,3 +25,4 @@ Local replica of the PeakFinder iOS app. It labels mountain peaks on a 360 degre
 ## Decisions log
 
 - Shell changed from the web page recommendation to native Swift, by Ishan.
+- Own build kept after the prior art search. UI follows PeakFinder, ideas come from Peak, by Ishan.
