@@ -37,7 +37,8 @@ final class PanoramaStore {
     private(set) var status = Status.loading
     private(set) var panorama: Panorama?
     private(set) var isDemo = false
-    private(set) var cameraLongAxisFieldOfView = 69.4
+    /// A typical iPhone main camera until the real one reports in.
+    private(set) var lens = CameraLens(longAxisFieldOfView: 69.4, imageAspect: 16.0 / 9)
 
     var heading = 78.0
     var pitch = 0.0
@@ -89,8 +90,8 @@ final class PanoramaStore {
         roll += (pose.roll - roll) * 0.25
     }
 
-    func setCameraFieldOfView(longAxis: Double) {
-        cameraLongAxisFieldOfView = longAxis
+    func setLens(_ lens: CameraLens) {
+        self.lens = lens
     }
 
     func toggleCamera() {
@@ -106,7 +107,8 @@ final class PanoramaStore {
     func visibleFieldOfView(screen: CGSize) -> Double {
         guard usesCamera else { return fieldOfView }
         return CameraOptics.horizontalFieldOfView(
-            longAxisFieldOfView: cameraLongAxisFieldOfView, screenWidth: screen.width, screenHeight: screen.height
+            longAxisFieldOfView: lens.longAxisFieldOfView, imageAspect: lens.imageAspect,
+            screenWidth: screen.width, screenHeight: screen.height
         )
     }
 

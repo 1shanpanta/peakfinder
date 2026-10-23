@@ -1,12 +1,20 @@
 import AVFoundation
 import SwiftUI
 
+/// What the PeakCore optics need to know about the running camera.
+struct CameraLens: Sendable, Equatable {
+    /// Field of view in degrees along the long side of the image.
+    var longAxisFieldOfView: Double
+    /// Long side over short side of the video image.
+    var imageAspect: Double
+}
+
 struct CameraPreview: UIViewRepresentable {
-    let onFieldOfView: (Double) -> Void
+    let onLens: (CameraLens) -> Void
 
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
-        view.start(onFieldOfView: onFieldOfView)
+        view.start(onLens: onLens)
         return view
     }
 
@@ -22,8 +30,8 @@ private final class CameraSession: @unchecked Sendable {
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "himal.camera")
 
-    /// Starts the back camera. Returns its field of view along the long side, or nil where there is no camera.
-    func start() async -> Double? {
+    /// Starts the back camera. Returns its lens, or nil where there is no camera.
+    func start() async -> CameraLens? {
         guard await AVCaptureDevice.requestAccess(for: .video) else { return nil }
         return await withCheckedContinuation { continuation in
             queue.async { continuation.resume(returning: self.configureAndRun()) }
@@ -34,7 +42,7 @@ private final class CameraSession: @unchecked Sendable {
         queue.async { self.session.stopRunning() }
     }
 
-    private func configureAndRun() -> Double? {
+    private func configureAndRun() -> CameraLens? {
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
               let input = try? AVCaptureDeviceInput(device: device), session.canAddInput(input) else { return nil }
         session.beginConfiguration()
@@ -42,7 +50,12 @@ private final class CameraSession: @unchecked Sendable {
         session.addInput(input)
         session.commitConfiguration()
         session.startRunning()
-        return Double(device.activeFormat.videoFieldOfView)
+        // The preset picks the format, so the image shape is known only now. Video comes out landscape.
+        let size = CMVideoFormatDescriptionGetDimensions(device.activeFormat.formatDescription)
+        return CameraLens(
+            longAxisFieldOfView: Double(device.activeFormat.videoFieldOfView),
+            imageAspect: Double(max(size.width, size.height)) / Double(min(size.width, size.height))
+        )
     }
 }
 
@@ -56,11 +69,11 @@ final class PreviewView: UIView {
         layer as! AVCaptureVideoPreviewLayer
     }
 
-    func start(onFieldOfView: @escaping (Double) -> Void) {
+    func start(onLens: @escaping (CameraLens) -> Void) {
         previewLayer.session = camera.session
         previewLayer.videoGravity = .resizeAspectFill
         Task {
-            if let fieldOfView = await camera.start() { onFieldOfView(fieldOfView) }
+            if let lens = await camera.start() { onLens(lens) }
         }
     }
 

@@ -36,7 +36,7 @@ struct ContentView: View {
 
     @ViewBuilder private var background: some View {
         if store.usesCamera {
-            CameraPreview { store.setCameraFieldOfView(longAxis: $0) }
+            CameraPreview { store.setLens($0) }
         } else {
             Self.sky
         }
