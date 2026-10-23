@@ -1,35 +1,41 @@
 # Himal
 
-A Nepal-only iOS app that names the peaks around you. It draws a flat panorama of the ridges with a tilted label on each peak. A camera mode puts the same labels over the live camera. It works offline.
+A Nepal-only app that names the peaks around you. It draws a flat panorama of the ridges with a tilted label on each peak. A camera mode puts the same labels over the live camera. It works offline.
 
-The idea comes from the PeakFinder app. Himal is a personal build, sideloaded to one phone. It is not for the App Store.
+The idea comes from the PeakFinder app. Himal is a personal build, sideloaded to one phone. It is not for any app store.
+
+## Layout
+
+| Folder | Holds |
+|---|---|
+| `ios/` | The iOS app (SwiftUI) and `ios/PeakCore`, the Swift engine package. |
+| `android/` | The Android app (Kotlin, Compose). `android/core` is the engine. |
+| `shared/data/` | The packed Nepal terrain and peaks. Both apps bundle these files. |
+| `tools/` | Scripts that fetch and pack the data, and take simulator screenshots. |
 
 ## How it works
 
 - Terrain: Copernicus GLO-30 heights, packed at 3 arc-seconds (about 90 m). Each cell keeps the highest source cell, so summits survive.
 - Peaks: OpenStreetMap `natural=peak` points with a Latin or Devanagari name. 619 peaks.
-- Engine: `Packages/PeakCore` shoots 3600 rays from the viewpoint. It keeps the steepest angle on each ray, after Earth curvature and refraction.
+- Engine: shoots 3600 rays from the viewpoint. It keeps the steepest angle on each ray, after Earth curvature and refraction.
 - A peak is visible when its summit angle is not below the steepest ground in front of it.
-- Heading comes from the compass. Pitch and roll come from the gravity vector.
+- Both engines follow the same rules, and both test suites check the same facts.
 
 ## Setup
 
 1. Run `tools/fetch-nepal-data.sh`. It downloads 1.7 GB of terrain and the Nepal OSM extract to `../peakfinder-data`, then cuts the peaks with `osmium`.
-2. Run `uv run tools/build-data.py`. It writes the packed files to `App/Himal/Resources`.
-3. Run `xcodegen generate` in `App`.
-4. Open `App/Himal.xcodeproj`. Pick your Apple ID under Signing, then run on the phone.
-
-A free Apple ID expires the app after 7 days. Run it again from Xcode to renew it.
+2. Run `uv run tools/build-data.py`. It writes the packed files to `shared/data`.
+3. iOS: run `xcodegen generate` in `ios`, open `ios/Himal.xcodeproj`, pick your Apple ID under Signing, then run on the phone. A free Apple ID expires the app after 7 days.
 
 ## Test
 
-- Engine: `swift test` in `Packages/PeakCore`. The Nepal sightline tests skip when the packed data is missing.
-- Screen: `tools/sim-shot.sh OUT.png -lat 27.7172 -lon 85.52 -heading 77` builds, launches and screenshots the simulator.
+- iOS engine: `swift test` in `ios/PeakCore`. The Nepal sightline tests skip when the packed data is missing.
+- iOS screen: `tools/ios-sim-shot.sh OUT.png -lat 27.7172 -lon 85.52 -heading 77` builds, launches and screenshots the simulator.
 
 ## Not verified yet
 
-- Live compass and camera alignment on a real phone. The simulator has neither.
-- Landscape layout.
+- Live compass and camera alignment on a real phone. Simulators have neither.
+- Landscape layout and pinch to zoom.
 - Accuracy against a real photo.
 
 ## Limits
@@ -42,4 +48,5 @@ A free Apple ID expires the app after 7 days. Run it again from Xcode to renew i
 
 - Shell changed from the web page recommendation to native Swift, by Ishan.
 - Own build kept after the prior art search. UI follows PeakFinder, ideas come from Peak, by Ishan.
-- Pitch and roll use gravity, not the attitude matrix. Apple documents the matrix frame in conflicting ways.
+- iOS pitch and roll use gravity, not the attitude matrix. Apple documents the matrix frame in conflicting ways.
+- Android is native Kotlin, not Expo. A JavaScript engine without a JIT ran 28 times slower than V8 with one on the same loop, and the terrain file is 130 MB.

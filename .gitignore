@@ -1,5 +1,18 @@
 .DS_Store
-.build/
-*.xcodeproj
 DerivedData/
-App/Himal/Resources/nepal-dem.i16
+*.xcodeproj
+
+# 130 MB, rebuilt by tools/build-data.py
+shared/data/nepal-dem.i16
+
+# Swift package
+.build/
+
+# Android
+.gradle/
+build/
+local.properties
+*.keystore
+*.jks
+*.apk
+*.aab
