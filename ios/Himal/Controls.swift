@@ -30,7 +30,7 @@ struct CompassDial: View {
         Group {
             VStack(spacing: 3) {
                 ZStack {
-                    Circle().fill(.white.opacity(0.95))
+                    Circle().fill(isFollowing ? Color(red: 0.16, green: 0.62, blue: 0.93) : .white.opacity(0.95))
                     Canvas { context, size in
                         let center = CGPoint(x: size.width / 2, y: size.height / 2)
                         let radius = size.width / 2 - 7
@@ -46,8 +46,8 @@ struct CompassDial: View {
                         south.addLine(to: CGPoint(x: 6, y: -2))
                         south.addLine(to: CGPoint(x: -6, y: -2))
                         south.closeSubpath()
-                        context.fill(south, with: .color(.black.opacity(0.35)))
-                        context.fill(north, with: .color(Color(red: 0.16, green: 0.62, blue: 0.93)))
+                        context.fill(south, with: .color(isFollowing ? .white.opacity(0.55) : .black.opacity(0.35)))
+                        context.fill(north, with: .color(isFollowing ? .white : Color(red: 0.16, green: 0.62, blue: 0.93)))
                     }
                 }
                 .frame(width: 44, height: 44)
@@ -59,11 +59,6 @@ struct CompassDial: View {
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
                     .background(RoundedRectangle(cornerRadius: 5).fill(.white.opacity(0.95)))
-            }
-            .overlay(alignment: .topTrailing) {
-                if isFollowing {
-                    Circle().fill(Color(red: 0.16, green: 0.62, blue: 0.93)).frame(width: 9, height: 9).offset(x: 2, y: -2)
-                }
             }
         }
         .contentShape(Rectangle())

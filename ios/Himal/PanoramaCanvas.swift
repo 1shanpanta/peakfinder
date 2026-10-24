@@ -24,24 +24,45 @@ struct PanoramaCanvas: View {
         }
     }
 
-    /// Puts the tallest skyline in any direction a little below mid-screen, so labels have sky above them.
-    /// It depends on the whole circle, not the visible slice, so panning does not make the view jump.
+    /// Puts the tallest skyline in any direction near mid-screen, so labels have sky above them and the ridges
+    /// get the rest of the height. It depends on the whole circle, not the visible slice, so panning does not jump.
     private func levelFraction(_ size: CGSize) -> Double {
         let tallest = max(Double(panorama.skyline.max() ?? 0), 0)
-        return min(0.82, 0.58 + tallest * (size.width / fieldOfView) / size.height)
+        return min(0.82, 0.52 + tallest * (size.width / fieldOfView) / size.height)
     }
 
-    /// Far ridges first, each nearer one drawn darker over it.
+    /// Far ridges first, each nearer one drawn darker over it. Each ridge is paler at its crest, as if in haze.
     private func drawRidges(_ context: inout GraphicsContext, _ view: ViewProjection) {
-        var profiles: [(Double) -> Double] = [panorama.skylineAngle(atBearing:)]
-        profiles += panorama.layers.reversed().map { layer in { layer.angle(atBearing: $0) } }
-        for (index, profile) in profiles.enumerated() {
-            let depth = Double(index) / Double(max(profiles.count - 1, 1))
-            var area = outline(profile, view)
+        var ridges: [(profile: (Double) -> Double, rangeKm: Double)] = [(panorama.skylineAngle(atBearing:), panorama.rangeKm)]
+        ridges += panorama.layers.reversed().map { layer in ({ layer.angle(atBearing: $0) }, layer.rangeKm) }
+        for (index, ridge) in ridges.enumerated() {
+            let depth = Double(index) / Double(max(ridges.count - 1, 1))
+            let edge = outline(Self.softened(ridge.profile, spread: Self.spread(rangeKm: ridge.rangeKm)), view)
+            var area = edge
             area.addLine(to: CGPoint(x: view.width + 2, y: view.height))
             area.addLine(to: CGPoint(x: -2, y: view.height))
             area.closeSubpath()
-            context.fill(area, with: .color(Self.ridgeColor(depth: depth)))
+            let crest = edge.boundingRect.minY
+            let haze = Gradient(colors: [Self.crestColor(depth: depth), Self.baseColor(depth: depth)])
+            context.fill(area, with: .linearGradient(
+                haze, startPoint: CGPoint(x: 0, y: crest), endPoint: CGPoint(x: 0, y: min(view.height, crest + view.height * 0.4))
+            ))
+        }
+    }
+
+    /// Averages a few nearby bearings. Near terrain comes from coarse cells and shows as steps, which this rounds off.
+    private static func softened(_ profile: @escaping (Double) -> Double, spread: Double) -> (Double) -> Double {
+        guard spread > 0 else { return profile }
+        let offsets = [-1.0, -0.5, 0, 0.5, 1.0].map { $0 * spread }
+        return { bearing in offsets.map { profile(bearing + $0) }.reduce(0, +) / Double(offsets.count) }
+    }
+
+    private static func spread(rangeKm: Double) -> Double {
+        switch rangeKm {
+        case ...4: 0.5
+        case ...12: 0.3
+        case ...30: 0.15
+        default: 0
         }
     }
 
@@ -88,21 +109,35 @@ struct PanoramaCanvas: View {
         context.drawLayer { layer in
             layer.translateBy(x: origin.x, y: origin.y)
             layer.rotate(by: Self.labelTilt)
-            let shape = Path(roundedRect: rect, cornerRadius: 11)
+            let shape = Path(roundedRect: rect, cornerRadius: 6)
             layer.fill(shape, with: .color(.white.opacity(0.95)))
             layer.stroke(shape, with: .color(.black.opacity(0.2)), lineWidth: 0.5)
             layer.draw(text, at: CGPoint(x: rect.minX + 9, y: rect.midY), anchor: .leading)
         }
     }
 
+    private typealias RGB = (r: Double, g: Double, b: Double)
+    private static let farRidge: RGB = (0.68, 0.78, 0.89)
+    private static let nearRidge: RGB = (0.10, 0.14, 0.19)
+    private static let horizonHaze: RGB = (0.86, 0.92, 0.97)
+    private static let shade: RGB = (0.03, 0.05, 0.08)
+
+    private static func mix(_ a: RGB, _ b: RGB, _ amount: Double) -> RGB {
+        (a.r + (b.r - a.r) * amount, a.g + (b.g - a.g) * amount, a.b + (b.b - a.b) * amount)
+    }
+
     /// Depth 0 is the farthest ridge, pale and hazy. Depth 1 is the nearest, dark.
-    static func ridgeColor(depth: Double) -> Color {
-        let far = (r: 0.68, g: 0.78, b: 0.89)
-        let near = (r: 0.10, g: 0.14, b: 0.19)
-        return Color(
-            red: far.r + (near.r - far.r) * depth,
-            green: far.g + (near.g - far.g) * depth,
-            blue: far.b + (near.b - far.b) * depth
-        )
+    private static func ridge(depth: Double) -> RGB { mix(farRidge, nearRidge, depth) }
+
+    /// The top of a far ridge fades toward the horizon haze. A near ridge keeps its own colour.
+    static func crestColor(depth: Double) -> Color {
+        let c = mix(ridge(depth: depth), horizonHaze, 0.5 * (1 - depth))
+        return Color(red: c.r, green: c.g, blue: c.b)
+    }
+
+    /// The foot of a near ridge sinks toward black, so the nearest ground is not one flat block.
+    static func baseColor(depth: Double) -> Color {
+        let c = mix(ridge(depth: depth), shade, 0.35 * depth)
+        return Color(red: c.r, green: c.g, blue: c.b)
     }
 }
