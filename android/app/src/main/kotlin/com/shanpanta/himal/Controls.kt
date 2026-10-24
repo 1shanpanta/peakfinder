@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -68,7 +67,7 @@ fun CompassDial(heading: Double, isFollowing: Boolean, onClick: () -> Unit, onLo
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .semantics { contentDescription = "Compass, heading ${heading.roundToInt()} degrees" },
     ) {
-        Box(Modifier.size(44.dp).shadow(3.dp, CircleShape).background(ControlWhite, CircleShape)) {
+        Box(Modifier.size(44.dp).shadow(3.dp, CircleShape).background(if (isFollowing) Accent else ControlWhite, CircleShape)) {
             Canvas(Modifier.size(44.dp)) {
                 val radius = size.width / 2 - 7 * density
                 val unit = density
@@ -85,12 +84,9 @@ fun CompassDial(heading: Double, isFollowing: Boolean, onClick: () -> Unit, onLo
                         lineTo(center.x - 6 * unit, center.y - 2 * unit)
                         close()
                     }
-                    drawPath(south, Color.Black.copy(alpha = 0.35f))
-                    drawPath(north, Accent)
+                    drawPath(south, if (isFollowing) Color.White.copy(alpha = 0.55f) else Color.Black.copy(alpha = 0.35f))
+                    drawPath(north, if (isFollowing) Color.White else Accent)
                 }
-            }
-            if (isFollowing) {
-                Box(Modifier.size(9.dp).offset(x = 37.dp, y = (-2).dp).background(Accent, CircleShape))
             }
         }
         Text(

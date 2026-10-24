@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -55,27 +56,51 @@ fun PanoramaCanvas(
 }
 
 /**
- * Puts the tallest skyline in any direction a little below mid-screen, so labels have sky above them.
- * It depends on the whole circle, not the visible slice, so panning does not make the view jump.
+ * Puts the tallest skyline in any direction near mid-screen, so labels have sky above them and the ridges
+ * get the rest of the height. It depends on the whole circle, not the visible slice, so panning does not jump.
  */
 private fun DrawScope.levelFraction(panorama: Panorama, fieldOfView: Double): Double {
     val tallest = max(panorama.skyline.max().toDouble(), 0.0)
-    return min(0.82, 0.58 + tallest * (size.width / fieldOfView) / size.height)
+    return min(0.82, 0.52 + tallest * (size.width / fieldOfView) / size.height)
 }
 
-/** Far ridges first, each nearer one drawn darker over it. */
+private class Ridge(val profile: (Double) -> Double, val rangeKm: Double)
+
+/** Far ridges first, each nearer one drawn darker over it. Each ridge is paler at its crest, as if in haze. */
 private fun DrawScope.drawRidges(panorama: Panorama, view: ViewProjection) {
-    val profiles: List<(Double) -> Double> = listOf<(Double) -> Double>(panorama::skylineAngle) +
-        panorama.layers.reversed().map { layer -> { bearing: Double -> layer.angle(bearing) } }
-    profiles.forEachIndexed { index, profile ->
-        val depth = index.toDouble() / max(profiles.size - 1, 1)
-        val area = outline(profile, view).apply {
+    val ridges = listOf(Ridge(panorama::skylineAngle, panorama.rangeKm)) +
+        panorama.layers.reversed().map { layer -> Ridge({ bearing -> layer.angle(bearing) }, layer.rangeKm) }
+    ridges.forEachIndexed { index, ridge ->
+        val depth = index.toDouble() / max(ridges.size - 1, 1)
+        val edge = outline(softened(ridge.profile, spread(ridge.rangeKm)), view)
+        val crest = edge.getBounds().top
+        val area = Path().apply {
+            addPath(edge)
             lineTo(view.width.toFloat() + 2, view.height.toFloat())
             lineTo(-2f, view.height.toFloat())
             close()
         }
-        drawPath(area, ridgeColor(depth))
+        val haze = Brush.verticalGradient(
+            colors = listOf(crestColor(depth), baseColor(depth)),
+            startY = crest,
+            endY = min(view.height.toFloat(), crest + view.height.toFloat() * 0.4f),
+        )
+        drawPath(area, haze)
     }
+}
+
+/** Averages a few nearby bearings. Near terrain comes from coarse cells and shows as steps, which this rounds off. */
+private fun softened(profile: (Double) -> Double, spread: Double): (Double) -> Double {
+    if (spread == 0.0) return profile
+    val offsets = doubleArrayOf(-1.0, -0.5, 0.0, 0.5, 1.0).map { it * spread }
+    return { bearing -> offsets.sumOf { profile(bearing + it) } / offsets.size }
+}
+
+private fun spread(rangeKm: Double): Double = when {
+    rangeKm <= 4 -> 0.5
+    rangeKm <= 12 -> 0.3
+    rangeKm <= 30 -> 0.15
+    else -> 0.0
 }
 
 private fun DrawScope.drawSkyline(panorama: Panorama, view: ViewProjection, drawsTerrain: Boolean) {
@@ -125,8 +150,8 @@ private fun DrawScope.drawPill(measurer: TextMeasurer, peak: VisiblePeak, origin
         translate(origin.x, origin.y)
         rotate(LABEL_TILT_DEGREES, Offset.Zero)
     }) {
-        drawRoundRect(Color.White.copy(alpha = 0.95f), topLeft, pill, CornerRadius(height / 2))
-        drawRoundRect(Color.Black.copy(alpha = 0.2f), topLeft, pill, CornerRadius(height / 2), Stroke(0.5f * density))
+        drawRoundRect(Color.White.copy(alpha = 0.95f), topLeft, pill, CornerRadius(6 * density))
+        drawRoundRect(Color.Black.copy(alpha = 0.2f), topLeft, pill, CornerRadius(6 * density), Stroke(0.5f * density))
         drawText(text, topLeft = Offset(topLeft.x + 9 * density, topLeft.y + (height - text.size.height) / 2))
     }
 }
@@ -138,13 +163,24 @@ private fun label(peak: VisiblePeak): AnnotatedString = buildAnnotatedString {
     }
 }
 
+private val FAR_RIDGE = Triple(0.68, 0.78, 0.89)
+private val NEAR_RIDGE = Triple(0.10, 0.14, 0.19)
+private val HORIZON_HAZE = Triple(0.86, 0.92, 0.97)
+private val SHADE = Triple(0.03, 0.05, 0.08)
+
+private fun mix(a: Triple<Double, Double, Double>, b: Triple<Double, Double, Double>, amount: Double) = Triple(
+    a.first + (b.first - a.first) * amount,
+    a.second + (b.second - a.second) * amount,
+    a.third + (b.third - a.third) * amount,
+)
+
+private fun Triple<Double, Double, Double>.toColor() = Color(first.toFloat(), second.toFloat(), third.toFloat())
+
 /** Depth 0 is the farthest ridge, pale and hazy. Depth 1 is the nearest, dark. */
-internal fun ridgeColor(depth: Double): Color {
-    val far = Triple(0.68, 0.78, 0.89)
-    val near = Triple(0.10, 0.14, 0.19)
-    return Color(
-        red = (far.first + (near.first - far.first) * depth).toFloat(),
-        green = (far.second + (near.second - far.second) * depth).toFloat(),
-        blue = (far.third + (near.third - far.third) * depth).toFloat(),
-    )
-}
+private fun ridge(depth: Double) = mix(FAR_RIDGE, NEAR_RIDGE, depth)
+
+/** The top of a far ridge fades toward the horizon haze. A near ridge keeps its own colour. */
+internal fun crestColor(depth: Double): Color = mix(ridge(depth), HORIZON_HAZE, 0.5 * (1 - depth)).toColor()
+
+/** The foot of a near ridge sinks toward black, so the nearest ground is not one flat block. */
+internal fun baseColor(depth: Double): Color = mix(ridge(depth), SHADE, 0.35 * depth).toColor()
