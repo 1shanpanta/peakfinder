@@ -4,14 +4,23 @@ A Nepal-only app that names the peaks around you. It draws a flat panorama of th
 
 The idea comes from the PeakFinder app. Himal is a personal build, sideloaded to one phone. It is not for any app store.
 
+## Screenshots
+
+Same viewpoint on both apps: Nagarkot, looking east at heading 77 degrees, with Mount Everest in view.
+
+| iOS | Android |
+|---|---|
+| ![Himal on iOS, Nagarkot, heading 77 degrees](docs/images/ios-nagarkot.png) | ![Himal on Android, Nagarkot, heading 77 degrees](docs/images/android-nagarkot.png) |
+
 ## Layout
 
 | Folder | Holds |
 |---|---|
 | `ios/` | The iOS app (SwiftUI) and `ios/PeakCore`, the Swift engine package. |
 | `android/` | The Android app (Kotlin, Compose). `android/core` is the engine. |
-| `shared/data/` | The packed Nepal terrain and peaks. Both apps bundle these files. |
+| `shared/data/` | The packed Nepal peaks and terrain header. Both apps bundle these files. The 130 MB terrain file is built locally. |
 | `tools/` | Scripts that fetch and pack the data, and take simulator screenshots. |
+| `docs/images/` | The screenshots in this file. |
 
 ## How it works
 
@@ -49,7 +58,7 @@ The idea comes from the PeakFinder app. Himal is a personal build, sideloaded to
 
 ## Decisions log
 
-- Shell changed from the web page recommendation to native Swift, by Ishan.
-- Own build kept after the prior art search. UI follows PeakFinder, ideas come from Peak, by Ishan.
+- Shell changed from the web page recommendation to native Swift.
+- Own build kept after the prior art search. UI follows PeakFinder, ideas come from Peak.
 - iOS pitch and roll use gravity, not the attitude matrix. Apple documents the matrix frame in conflicting ways.
 - Android is native Kotlin, not Expo. A JavaScript engine without a JIT ran 28 times slower than V8 with one on the same loop, and the terrain file is 130 MB.
