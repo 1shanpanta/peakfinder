@@ -25,7 +25,7 @@ Same viewpoint on both apps: Nagarkot, looking east at heading 77 degrees, with 
 ## How it works
 
 - Terrain: Copernicus GLO-30 heights, packed at 3 arc-seconds (about 90 m). Each cell keeps the highest source cell, so summits survive.
-- Peaks: OpenStreetMap `natural=peak` points with a Latin or Devanagari name. 619 peaks. A peak with no `ele` tag in OSM takes its height from the terrain data.
+- Peaks: OpenStreetMap `natural=peak` points with a Latin or Devanagari name. 619 peaks. A peak with no numeric `ele` tag in OSM takes its height from the terrain data.
 - Engine: shoots 3600 rays from the viewpoint. It keeps the steepest angle on each ray, after Earth curvature and refraction.
 - A peak is visible when its summit angle is not below the steepest ground in front of it.
 - Both engines follow the same rules, and both test suites check the same facts.
