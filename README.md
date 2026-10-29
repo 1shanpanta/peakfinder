@@ -25,24 +25,24 @@ Same viewpoint on both apps: Nagarkot, looking east at heading 77 degrees, with 
 ## How it works
 
 - Terrain: Copernicus GLO-30 heights, packed at 3 arc-seconds (about 90 m). Each cell keeps the highest source cell, so summits survive.
-- Peaks: OpenStreetMap `natural=peak` points with a Latin or Devanagari name. 619 peaks.
+- Peaks: OpenStreetMap `natural=peak` points with a Latin or Devanagari name. 619 peaks. A peak with no `ele` tag in OSM takes its height from the terrain data.
 - Engine: shoots 3600 rays from the viewpoint. It keeps the steepest angle on each ray, after Earth curvature and refraction.
 - A peak is visible when its summit angle is not below the steepest ground in front of it.
 - Both engines follow the same rules, and both test suites check the same facts.
 
 ## Setup
 
-Requirements: macOS 14 or newer (the scripts and `swift test` assume it), `brew install osmium-tool xcodegen uv`, Xcode 16 or newer, JDK 17, and the Android SDK (set `ANDROID_HOME`, or put `sdk.dir` in `android/local.properties`).
+Requirements: macOS 14 or newer (the scripts and `swift test` assume it), `brew install osmium-tool xcodegen uv`, Xcode 16 or newer, JDK 17 (set `JAVA_HOME`), and the Android SDK (set `ANDROID_HOME`, or put `sdk.dir` in `android/local.properties`).
 
 1. Run `tools/fetch-nepal-data.sh`. It downloads about 2.1 GB (1.7 GB of terrain, the rest the Nepal OSM extract) to `../peakfinder-data`, then cuts the peaks with `osmium`. The tracked `shared/data/nepal-peaks.json` is a 619-peak snapshot. A rebuild from the latest extract can differ.
 2. Run `uv run tools/build-data.py`. It writes the packed files to `shared/data`.
 3. iOS: change `bundleIdPrefix` and `PRODUCT_BUNDLE_IDENTIFIER` in `ios/project.yml` to an id you own, because Apple ids are unique. Run `xcodegen generate` in `ios`, open `ios/Himal.xcodeproj`, pick your Apple ID under Signing, then run on the phone. Each `xcodegen generate` clears the Signing choice, so pick it again. A free Apple ID expires the app after 7 days.
-4. Android: in `android`, run `./gradlew :app:assembleRelease`. The signed APK lands in `android/app/build/outputs/apk/release`. Install it with `adb install -r app-release.apk`. The release build uses the debug key, so it is for sideloading only.
+4. Android: in `android`, run `./gradlew :app:assembleRelease`. The signed APK lands in `android/app/build/outputs/apk/release`. Install it with `adb install -r app/build/outputs/apk/release/app-release.apk`. The release build uses the debug key, so it is for sideloading only.
 
 ## Test
 
 - iOS engine: `swift test` in `ios/PeakCore`. The Nepal sightline tests skip when the packed data is missing.
-- iOS screen: `tools/ios-sim-shot.sh OUT.png -lat 27.7172 -lon 85.52 -heading 77` builds, launches and screenshots the booted simulator. It builds for an `iPhone 17 Pro` simulator. Edit the `-destination` in the script to use another.
+- iOS screen: `tools/ios-sim-shot.sh OUT.png -lat 27.7172 -lon 85.52 -heading 77` builds, launches and screenshots the booted simulator. It builds for an `iPhone 17 Pro` simulator and uses the id `com.shanpanta.himal`. Edit the `-destination` and the id in the script if you use another simulator or changed the id in Setup step 3.
 - Android engine: `./gradlew :core:test` in `android`. It runs on the JVM with no emulator. The Nepal sightline tests skip when the packed data is missing.
 - Android screen: `tools/android-shot.sh OUT.png --ed lat 27.7172 --ed lon 85.52 --ed heading 77` builds, installs, launches and screenshots the device in `adb devices`.
 

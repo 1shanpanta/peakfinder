@@ -1,6 +1,8 @@
 nepal-peaks.json
 Contains data (c) OpenStreetMap contributors, available under the Open Database Licence (ODbL) 1.0.
 https://www.openstreetmap.org/copyright
+nepal-peaks.json is a derived database and is made available under the ODbL 1.0.
+The height of a peak with no `ele` tag in OSM is sampled from the Copernicus DEM below.
 
 nepal-dem.json, and the nepal-dem.i16 file that tools/build-data.py writes
 Contains Copernicus DEM GLO-30, modified (each 3 arc-second cell keeps the highest of its 3x3 source cells).
