@@ -1,0 +1,8 @@
+nepal-peaks.json
+Contains data (c) OpenStreetMap contributors, available under the Open Database Licence (ODbL) 1.0.
+https://www.openstreetmap.org/copyright
+
+nepal-dem.json, and the nepal-dem.i16 file that tools/build-data.py writes
+Contains Copernicus DEM GLO-30, modified (each 3 arc-second cell keeps the highest of its 3x3 source cells).
+Produced using Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018,
+provided under COPERNICUS by the European Union and ESA. All rights reserved.

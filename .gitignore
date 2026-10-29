@@ -7,9 +7,18 @@ shared/data/nepal-dem.i16
 
 # Swift package
 .build/
+.swiftpm/
+
+# IDEs
+.idea/
+*.iml
+captures/
+xcuserdata/
+*.hprof
 
 # Android
 .gradle/
+.kotlin/
 build/
 local.properties
 *.keystore

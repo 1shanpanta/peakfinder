@@ -32,15 +32,17 @@ Same viewpoint on both apps: Nagarkot, looking east at heading 77 degrees, with 
 
 ## Setup
 
-1. Run `tools/fetch-nepal-data.sh`. It downloads 1.7 GB of terrain and the Nepal OSM extract to `../peakfinder-data`, then cuts the peaks with `osmium`.
+Requirements: macOS 14 or newer (the scripts and `swift test` assume it), `brew install osmium-tool xcodegen uv`, Xcode 16 or newer, JDK 17, and the Android SDK (set `ANDROID_HOME`, or put `sdk.dir` in `android/local.properties`).
+
+1. Run `tools/fetch-nepal-data.sh`. It downloads about 2.1 GB (1.7 GB of terrain, the rest the Nepal OSM extract) to `../peakfinder-data`, then cuts the peaks with `osmium`. The tracked `shared/data/nepal-peaks.json` is a 619-peak snapshot. A rebuild from the latest extract can differ.
 2. Run `uv run tools/build-data.py`. It writes the packed files to `shared/data`.
-3. iOS: run `xcodegen generate` in `ios`, open `ios/Himal.xcodeproj`, pick your Apple ID under Signing, then run on the phone. A free Apple ID expires the app after 7 days.
-4. Android: needs JDK 17 and the Android SDK. In `android`, run `./gradlew :app:assembleRelease`. The signed APK lands in `android/app/build/outputs/apk/release`. Install it with `adb install -r app-release.apk`. The release build uses the debug key, so it is for sideloading only.
+3. iOS: change `bundleIdPrefix` and `PRODUCT_BUNDLE_IDENTIFIER` in `ios/project.yml` to an id you own, because Apple ids are unique. Run `xcodegen generate` in `ios`, open `ios/Himal.xcodeproj`, pick your Apple ID under Signing, then run on the phone. Each `xcodegen generate` clears the Signing choice, so pick it again. A free Apple ID expires the app after 7 days.
+4. Android: in `android`, run `./gradlew :app:assembleRelease`. The signed APK lands in `android/app/build/outputs/apk/release`. Install it with `adb install -r app-release.apk`. The release build uses the debug key, so it is for sideloading only.
 
 ## Test
 
 - iOS engine: `swift test` in `ios/PeakCore`. The Nepal sightline tests skip when the packed data is missing.
-- iOS screen: `tools/ios-sim-shot.sh OUT.png -lat 27.7172 -lon 85.52 -heading 77` builds, launches and screenshots the simulator.
+- iOS screen: `tools/ios-sim-shot.sh OUT.png -lat 27.7172 -lon 85.52 -heading 77` builds, launches and screenshots the booted simulator. It builds for an `iPhone 17 Pro` simulator. Edit the `-destination` in the script to use another.
 - Android engine: `./gradlew :core:test` in `android`. It runs on the JVM with no emulator. The Nepal sightline tests skip when the packed data is missing.
 - Android screen: `tools/android-shot.sh OUT.png --ed lat 27.7172 --ed lon 85.52 --ed heading 77` builds, installs, launches and screenshots the device in `adb devices`.
 
@@ -53,8 +55,14 @@ Same viewpoint on both apps: Nagarkot, looking east at heading 77 degrees, with 
 ## Limits
 
 - Only 619 named peaks. OSM has no English name for most Nepali peaks.
-- The terrain model includes roofs and trees. Ground under 25 m within 2 km is ignored.
+- The terrain model includes roofs and trees. Ground less than 25 m above the eye within 2 km is ignored.
 - Bearings use a sphere, which is up to 0.15 degrees off the WGS84 geodesic.
+
+## Data credits
+
+- Contains data (c) OpenStreetMap contributors, available under the Open Database Licence (ODbL).
+- Contains Copernicus DEM GLO-30, produced using Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the European Union and ESA. All rights reserved.
+- The full notices sit in `shared/data/NOTICE`. The screenshots above draw on both sources.
 
 ## Decisions log
 
